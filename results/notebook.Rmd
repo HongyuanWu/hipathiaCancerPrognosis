@@ -4,11 +4,14 @@ author: "Yunlong Jiao"
 date: "Apr 15, 2017"
 output:
   html_document:
+    toc: true
+    toc_depth: 2
     code_folding: hide
     theme: cerulean
-    df_print: paged
-    fig_width: 15
-    fig_height: 10
+    df_print: kable
+  github_document:
+    toc: true
+    toc_depth: 2
 ---
 
 This notebook reproduces numerical results of the following paper:
@@ -16,7 +19,7 @@ This notebook reproduces numerical results of the following paper:
 > Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." Submitted. 2017.
 
 ```{r setup, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE, fig.width = 15, fig.height = 10)
 options(stringsAsFactors = FALSE)
 library(ggplot2)
 library(igraph)
@@ -24,15 +27,15 @@ library(org.Hs.eg.db)
 library(GO.db)
 ```
 
-## I. Run prediction
+# I. Run prediction
 
 Parallel script `runPredict.R` on (SGE) cluster by shell script such as `runPredict.sh` with parameters recoded in `runPredict.param.txt`.
 
 We have run this section locally and CV folds predictions are not made available online.
 
-## II. Prediction performance
+# II. Prediction performance
 
-#### Parameter
+## Parameter
 
 First read in parameters from cluster run and overview the profiles and predictors of interest.
 
@@ -91,7 +94,7 @@ slist <- c("auroc")
 slist.prefer.large.score <- c("auroc" = TRUE)
 ```
 
-#### Predictor tuning
+## Predictor tuning
 
 In order to avoid overfitting with the choice of prediction algorithm used, across each feature `xname` and each each label group `yname` and each outer `r nfolds`-fold CV repeated `r nrepeats` times indexed by `i.fold`, the predictor `prname` is selected by nested CV of `r nfolds.inn` folds repeated `r nrepeats.inn` times. The best prediction performance is reported by each evaluation measure `sname`.
 
@@ -186,7 +189,7 @@ rownames(scores) <- seq(nrow(scores))
 write.table(scores, file = "results.scores.txt", row.names = TRUE, col.names = TRUE, sep = '\t', quote = TRUE)
 ```
 
-#### Boxplot
+## Boxplot
 
 In the plot, along x-axis we have different feature matrices, along y-axis we have different evaluation measures in `slist`, the boxplots show the variance over scores evaluated against `r nfolds*nrepeats` randomly splitted CV folds.
 
@@ -216,7 +219,7 @@ p1 <- ggplot(scores, aes(x = x, y = value)) +
 plot(p1)
 ```
 
-#### Score and predictor table
+## Score and predictor table
 
 For each evaluation measure `sname`, we report the mean (+/- sd) scores. But as binary classes are unbalanced in most cases, we focus on using `auroc` to evaluate performance. Also this way we also get rid of the effect from tuning cutoff parameter.
 
@@ -246,7 +249,7 @@ tab2 <- do.call("rbind", tab2)
 knitr::kable(tab2, digits = 4, caption = 'score/predictor table of prediction performance (CV)')
 ```
 
-#### Statistical test
+## Statistical test
 
 Now we look at the significance of the difference in prediction using two feature matrices. For evaluation measure `auroc`, we compute a matrix where each entry indicates the p-value of a one-sided `t.test` testing if using the feature matrix in the row is indeed superior to using the feature matrix in the col.
 
@@ -275,7 +278,7 @@ thres <- 0.05
 knitr::kable(pmatrix.adj < thres, caption = paste0('Simplified by thresholding p-values at ', thres, ' (', sname, ')'))
 ```
 
-## III. Feature selection
+# III. Feature selection
 
 ```{r param-fs}
 # fix predictor prname
@@ -295,7 +298,7 @@ n.max.fs <- 50
 
 We are interested in informative features related to phenotypic response. To that end, we use `r prname` to rank feature importance in order to select top `r n.max.fs` pathways from one of `r pathlist`, or top `r n.max.fs` other-genes from `r xname.mix`.
 
-#### Selection of pathways
+## Selection of pathways
 
 We have run this section locally and the list of selected pathways are available in `results.pathways.txt`.
 
@@ -344,7 +347,7 @@ rownames(pathways) <- seq(nrow(pathways))
 write.table(pathways, file = "results.pathways.txt", row.names = TRUE, col.names = TRUE, sep = '\t')
 ```
 
-#### Selection of other-genes that complement functional pathways
+## Selection of other-genes that complement functional pathways
 
 We have run this section locally and the list of selected other-genes are available in `results.othergenes.txt`.
 
@@ -398,7 +401,7 @@ rownames(othergenes) <- seq(nrow(othergenes))
 write.table(othergenes, file = "results.othergenes.txt", row.names = TRUE, col.names = TRUE, sep = '\t')
 ```
 
-#### Top feature table
+## Top feature table
 
 ```{r featselect}
 # load graph data and read in lists of selected features
@@ -501,7 +504,7 @@ genelist$func <- go.annot$TERM[match(gene.annot$GO[id], go.annot$GOID)]
 knitr::kable(genelist, caption = paste0("top ", n.max.fs, " other-genes selected from ", xname.mix))
 ```
 
-## IV. Session info
+# IV. Session info
 
 ```{r session_info}
 devtools::session_info()

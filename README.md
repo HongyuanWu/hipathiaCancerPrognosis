@@ -6,7 +6,7 @@ This repo contains data and R codes for reproducing numerical results of the fol
 
 ## Quick start
 
-See the complete notebook in `results/notebook.html` for the detailed pipeline, codes and results for the numerical experiments of this study.
+See the notebook in `results/notebook.[md|html]` for the detailed pipeline, codes and results for the numerical experiments of this study.
 
 ## Directories
 
@@ -18,7 +18,7 @@ The top level structure is as follows:
   - `fun.vals.RData`, `go.vals.RData` are function-level profiles, processed from pathway activities with [UniProt](http://www.uniprot.org/) or [GO](http://www.geneontology.org/) annotations;
   - `fpgs.RData` contains detailed info of KEGG pathways modeled in paper.
 * `results/` - results of numerical experiments, including
-  - `notebook.html` is the project notebook with raw codes found in `notebook.Rmd` and figures saved in `figure/`;
+  - `notebook.html` is the project notebook with raw codes found in `notebook.Rmd`, markdown version in `notebook.md` and figures saved in `notebook_files/`;
   - `results.scores.txt` contain evaluation scores of prediction performance and `results.pathways.txt`, `results.othergenes.txt` contain selected top features in each type of profile;
   - `runPredict.R` is the R script for running using different profiles to make prediction with an example shell script to submit parallelized tasks to SGE cluster in `runPredict.sh` on parameters defined in `runPredict.param.txt`.
 * `src/` - source code and general purpose scripts, including
@@ -37,7 +37,7 @@ require(org.Hs.eg.db) # maps entrezID to gene symbol
 require(GO.db)        # annotates GO functions
 ```
 
-Then run in shell, which should take seconds to finish
+then run in shell, which should take seconds to get the project notebook `results/notebook.html`
 
 ```sh
 $ git clone https://github.com/YunlongJiao/hipathiaCancerPrognosis
@@ -45,7 +45,7 @@ $ cd hipathiaCancerPrognosis/results/
 $ Rscript -e "rmarkdown::render('results/notebook.Rmd')"
 ```
 
-_Note that in order to build the project from scratch, one needs to run the predictions to obtain the three results files `results/results.[scores|pathways|othergenes].txt`, which requires to run `runPredict.R` before building the project notebook. See `results/notebook.html` for detail._
+Note that in order to build the project from scratch, one needs to run the predictions to obtain the three results files `results/results.[scores|pathways|othergenes].txt`, which requires to run `runPredict.R` before building the project notebook. See `results/notebook.html` for detail.
 
 ## Built with
 
