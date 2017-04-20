@@ -1,0 +1,508 @@
+---
+title: "Cancer Prognosis with hiPathia"
+author: "Yunlong Jiao"
+date: "Apr 15, 2017"
+output:
+  html_document:
+    code_folding: hide
+    theme: cerulean
+    df_print: paged
+    fig_width: 15
+    fig_height: 10
+---
+
+This notebook reproduces numerical results of the following paper:
+
+> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." Submitted. 2017.
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE)
+options(stringsAsFactors = FALSE)
+library(ggplot2)
+library(igraph)
+library(org.Hs.eg.db)
+library(GO.db)
+```
+
+## I. Run prediction
+
+Parallel script `runPredict.R` on (SGE) cluster by shell script such as `runPredict.sh` with parameters recoded in `runPredict.param.txt`.
+
+We have run this section locally and CV folds predictions are not made available online.
+
+## II. Prediction performance
+
+#### Parameter
+
+First read in parameters from cluster run and overview the profiles and predictors of interest.
+
+```{r param-pred}
+# read in parameters
+param <- read.table("runPredict.param.txt", header = TRUE, row.names = 1)
+
+# features or x
+# note for error control: mini.genes.vals is renamed to path.genes.vals!!
+xlist <- c(
+  "fun.vals", "go.vals", # functionality features
+  "eff.vals", "path.vals", # pathway features
+  "path.genes.vals", "other.genes.vals", "genes.vals", # gene features
+  "eff.and.other.genes.vals", "path.and.other.genes.vals" # mixed type
+)
+stopifnot(length(setdiff(xlist,unique(param$xname))) == 0)
+# preview
+knitr::kable(cbind(seq_along(xlist), xlist), caption = "profiles")
+# types
+xlist.type <- c(
+  "fun.vals" = "func-wise", 
+  "go.vals" = "func-wise", # functionality features
+  "eff.vals" = "path-wise", 
+  "path.vals" = "path-wise", # pathway features
+  "path.genes.vals" = "gene-wise",
+  "other.genes.vals" = "gene-wise", 
+  "genes.vals" = "gene-wise", # gene features
+  "eff.and.other.genes.vals" = "mix-wise", 
+  "path.and.other.genes.vals" = "mix-wise" # mixed type
+)
+xlist.vline <- c(2.5, 4.5, 7.5) # cut off types in boxplots
+
+# groups or y
+yname <- "surv.grps"
+stopifnot(unique(param$yname) == yname)
+
+# predictors
+prlist <- unique(param$prname)
+# preview
+knitr::kable(cbind(seq_along(prlist), prlist), caption = "predictors")
+
+# (outter) `nfolds`-fold CV repeated `nrepeats` times for evaluation
+nfolds <- unique(param$nfolds)
+stopifnot(length(nfolds) == 1)
+nrepeats <- unique(param$nrepeats)
+stopifnot(length(nrepeats) == 1)
+
+# inner `nfolds.inn`-fold CV repeated `nrepeats.inn` times for tuning predictors
+nfolds.inn <- unique(param$nfolds.inn)
+stopifnot(length(nfolds.inn) == 1)
+nrepeats.inn <- unique(param$nrepeats.inn)
+stopifnot(length(nrepeats.inn) == 1)
+
+# evaluation measures
+slist <- c("auroc")
+slist.prefer.large.score <- c("auroc" = TRUE)
+```
+
+#### Predictor tuning
+
+In order to avoid overfitting with the choice of prediction algorithm used, across each feature `xname` and each each label group `yname` and each outer `r nfolds`-fold CV repeated `r nrepeats` times indexed by `i.fold`, the predictor `prname` is selected by nested CV of `r nfolds.inn` folds repeated `r nrepeats.inn` times. The best prediction performance is reported by each evaluation measure `sname`.
+
+We have run this section locally and CV folds evaluation scores are available in `results.scores.txt`.
+
+```{r tuning, eval=FALSE}
+# gather scores
+scores <- list()
+for (i.fold in seq(nfolds*nrepeats)) {
+  message("\n", i.fold, "-th fold out of ", nfolds*nrepeats, " folds ", appendLF = FALSE)
+  for (xname in xlist) {
+    message(".", appendLF = FALSE)
+    # get obj
+    objname <- paste('res', xname, yname, i.fold, nfolds, nrepeats, sep = '_')
+    objpath <- paste0('Robj/',objname,'.RData')
+    if (file.exists(objpath)) {
+      ivres <- get(load(objpath))
+      rm(list = objname)
+    } else {
+      # read nested cv res
+      cvres <- list()
+      for (prname in prlist) {
+        res.files <- list.files(path = 'Robj', 
+                                pattern = paste('^cvres', xname, yname, prname, 
+                                                i.fold, nfolds, nrepeats, 
+                                                '[[:digit:]]+', nfolds.inn, nrepeats.inn, 
+                                                sep = '_'), 
+                                full.names = TRUE)
+        res <- lapply(res.files, function(f) try(get(load(f))))
+        res <- res[sapply(res, function(x) !inherits(x, "try-error"))]
+        cvres[[prname]] <- crossValidationCombineResults(res)
+      }
+      
+      # generate iv res where predictor has been selected by nested cv
+      ivres <- list()
+      for (sname in slist) {
+        tt <- sapply(cvres, '[[', "system_time")
+        # order scores by increasing system time
+        ss <- sapply(cvres, '[[', sname)[order(tt, decreasing = FALSE)]
+        stopifnot(!any(is.na(ss)))
+        # fast algorithm is preferred among those returning equal score values
+        best.prname <- names(ss)[order(ss, decreasing = slist.prefer.large.score[sname])]
+        # get iv res NOTE while loop is to guarantee no iv res is found for such predictor
+        while (length(best.prname) > 0) {
+          best.files <- list.files(path = 'Robj', 
+                                   pattern = paste('^ivres', xname, yname, best.prname[1], 
+                                                   i.fold, nfolds, nrepeats, 
+                                                   '0+', nfolds.inn, nrepeats.inn, 
+                                                   sep = '_'), 
+                                   full.names = TRUE)
+          if (length(best.files) == 0) {
+            warning(i.fold, " cv for ", xname, " ", yname, " tuned to best prname ", best.prname[1], " but iv not found")
+            best.prname <- best.prname[-1]
+            next
+          } else if (length(best.files) == 1) {
+            best.prname <- best.prname[1]
+            best.objname <- gsub("^Robj/|.RData", "", best.files)
+            ivres[[sname]] <- get(load(best.files))
+            rm(list = best.objname)
+            break
+          } else {
+            stop("multiple ivres files found for ", i.fold, " cv for ", xname, " ", yname, " ", best.prname[1])
+          }
+        }
+        # in case no ivres files found for any predictors
+        stopifnot(length(best.prname) == 1)
+      }
+      
+      # save up
+      assign(objname, ivres)
+      save(list = objname, file = objpath)
+      rm(list = c(objname,"cvres"))
+    }
+    
+    # record score values
+    scores[[objname]] <- data.frame(
+      "y" = yname, 
+      "x" = xname, 
+      "type" = xlist.type[xname], 
+      "predictor" = sapply(slist, function(sname) ivres[[sname]][["predictor"]]), 
+      "rep" = i.fold, 
+      "score" = slist, 
+      "value" = sapply(slist, function(sname) ivres[[sname]][[sname]]), 
+      row.names = NULL
+    )
+    rm(ivres)
+  }
+}
+scores <- do.call('rbind', scores)
+rownames(scores) <- seq(nrow(scores))
+# write out scores
+write.table(scores, file = "results.scores.txt", row.names = TRUE, col.names = TRUE, sep = '\t', quote = TRUE)
+```
+
+#### Boxplot
+
+In the plot, along x-axis we have different feature matrices, along y-axis we have different evaluation measures in `slist`, the boxplots show the variance over scores evaluated against `r nfolds*nrepeats` randomly splitted CV folds.
+
+Some evaluation measures (`acc`, `fval`, etc) do associate with a specific `cutoff` threshold for predicted probability, which is always set to constant 0.5. It might be interesting to tune the threshold in case that the class sizes in training data are unbalanced. Note that `auroc` is a parameter-free measure.
+
+```{r boxplot}
+# read scores
+scores <- read.table("results.scores.txt", header = TRUE, row.names = 1, sep = '\t')
+scores$x <- factor(scores$x, levels = xlist, ordered = TRUE)
+
+# plot
+p1 <- ggplot(scores, aes(x = x, y = value)) + 
+  geom_boxplot(aes(fill = x), alpha = 0.8) + 
+  geom_vline(xintercept = xlist.vline, color = "grey", size = 1, linetype = 2) + 
+  facet_wrap(~score, scales = "free") + 
+  labs(x = "Profile type", y = "Score") + 
+  ggtitle("boxplot of prediction performance (CV)") + 
+  theme_bw() + 
+  guides(fill = guide_legend(title = "Profiles")) + 
+  theme(text = element_text(size = 32, colour = "black", face = "bold"), 
+        title = element_text(size = 32, colour = "black", face = "bold"), 
+        axis.text.x = element_blank(), 
+        axis.title.x = element_blank(), 
+        legend.key.height = unit(3, "line"), 
+        strip.background = element_rect(fill = "white"), 
+        plot.margin = unit(c(1, 1, 1, 1), "lines"))
+plot(p1)
+```
+
+#### Score and predictor table
+
+For each evaluation measure `sname`, we report the mean (+/- sd) scores. But as binary classes are unbalanced in most cases, we focus on using `auroc` to evaluate performance. Also this way we also get rid of the effect from tuning cutoff parameter.
+
+In addition we look at which predictor suits well in making prediction using each feature `xname`. We report the top frequently selected predictor across `r nfolds*nrepeats` CV runs.
+
+```{r table}
+tab2 <- list()
+i <- 1
+for (sname in slist) {
+  for (xname in xlist) {
+    d <- subset(scores, score == sname & x == xname)
+    prs <- gsub("^predictor", "", names(sort(table(d$predictor), decreasing = TRUE)))
+    tab2[[i]] <- data.frame(
+      "score" = sname,
+      "profile" = xname,
+      "mean" = mean(d$value),
+      "sd" = sd(d$value),
+      "pr1" = prs[1],
+      "pr2" = prs[2],
+      row.names = NULL
+    )
+    i <- i + 1
+  }
+}
+tab2 <- do.call("rbind", tab2)
+# preview
+knitr::kable(tab2, digits = 4, caption = 'score/predictor table of prediction performance (CV)')
+```
+
+#### Statistical test
+
+Now we look at the significance of the difference in prediction using two feature matrices. For evaluation measure `auroc`, we compute a matrix where each entry indicates the p-value of a one-sided `t.test` testing if using the feature matrix in the row is indeed superior to using the feature matrix in the col.
+
+```{r test}
+# fix evaluation measure sname
+sname <- "auroc"
+d <- subset(scores, score == sname)
+d <- lapply(split(d, d$x), "[[", "value")
+# signif test
+pmatrix <- matrix(NA, nrow = length(xlist), ncol = length(xlist),
+                  dimnames = list(xlist, xlist))
+for (i in 1:(length(xlist) - 1)) {
+  for (j in (i+1):length(xlist)) {
+    pmatrix[i,j] <- t.test(x = d[[xlist[i]]], y = d[[xlist[j]]], alternative = 'two.sided', mu = 0, paired = TRUE)$p.value
+  }
+}
+# correct p-value for multiple testing with Benjamini-Hochberg
+pmatrix.adj <- p.adjust(pmatrix, "BH")
+attributes(pmatrix.adj) <- attributes(pmatrix)
+# preview
+knitr::kable(pmatrix.adj, digits = 4, caption = paste0('FDR-adjusted p-values (', sname, ')'))
+
+# simplied table by thresholding p-values
+thres <- 0.05
+# preview
+knitr::kable(pmatrix.adj < thres, caption = paste0('Simplified by thresholding p-values at ', thres, ' (', sname, ')'))
+```
+
+## III. Feature selection
+
+```{r param-fs}
+# fix predictor prname
+prname <- "predictorRF"
+
+# path-wise profiles to select pathways
+pathlist <- c("eff.vals", "path.vals")
+
+# mix-wise profiles to select other.genes (key)
+xname.mix <- "path.and.other.genes.vals"
+xname.list <- c("other.genes.vals", "path.vals")
+xname.key <- "other.genes.vals"
+
+# max number of selected feats from each category
+n.max.fs <- 50
+```
+
+We are interested in informative features related to phenotypic response. To that end, we use `r prname` to rank feature importance in order to select top `r n.max.fs` pathways from one of `r pathlist`, or top `r n.max.fs` other-genes from `r xname.mix`.
+
+#### Selection of pathways
+
+We have run this section locally and the list of selected pathways are available in `results.pathways.txt`.
+
+```{r pathways, eval=FALSE}
+source("../src/func.R")
+pathways <- list()
+i <- 1
+for (xname in pathlist) {
+  message('\n featselect for \t', xname, '\n')
+  res.files <- list.files(path = 'Robj', 
+                          pattern = paste('^ivres', xname, yname, prname, 
+                                          '[[:digit:]]+', nfolds, nrepeats, 
+                                          0, nfolds.inn, nrepeats.inn, 
+                                          sep = '_'), 
+                          full.names = TRUE)
+  res <- lapply(res.files, function(f) get(load(f)))
+  names(res) <- paste0("rep",1:length(res))
+  
+  # feat.scores as a vector of mean var.imp over cv splits
+  fsfunc <- get(gsub("^predictor", "featselect", prname), mode = "function")
+  featlist.scores <- lapply(res, function(u){
+    message(",", appendLF = FALSE)
+    v <- fsfunc(model = u$model, keep.signif = FALSE)
+    data.frame(t(v))
+  })
+  featlist.scores <- colMeans(do.call("rbind", featlist.scores))
+  featlist.scores <- sort(featlist.scores, decreasing = TRUE)
+  rm(res)
+  
+  # to write up
+  pathways[[i]] <- data.frame(
+    "x" = xname,
+    "y" = yname,
+    "type" = xlist.type[xname],
+    "predictor" = prname,
+    "rank" = 1:n.max.fs,
+    "feat" = names(featlist.scores)[1:n.max.fs],
+    "varimp" = featlist.scores[1:n.max.fs],
+    row.names = NULL
+  )
+  i <- i + 1
+}
+pathways <- do.call("rbind", pathways)
+rownames(pathways) <- seq(nrow(pathways))
+# write up !
+write.table(pathways, file = "results.pathways.txt", row.names = TRUE, col.names = TRUE, sep = '\t')
+```
+
+#### Selection of other-genes that complement functional pathways
+
+We have run this section locally and the list of selected other-genes are available in `results.othergenes.txt`.
+
+```{r othergenes, eval=FALSE}
+source("../src/func.R")
+# get full lists of features in each of xname.list
+featlist.long <- lapply(xname.list, function(u){
+  data.files <- list.files(path = '../data', pattern = u, full.names = TRUE)
+  unlist(lapply(data.files, function(f) colnames(get(load(f)))))
+})
+names(featlist.long) <- xname.list
+
+# load res
+res.files <- list.files(path = 'Robj', 
+                        pattern = paste('^ivres', xname.mix, yname, prname, 
+                                        '[[:digit:]]+', nfolds, nrepeats, 
+                                        0, nfolds.inn, nrepeats.inn, 
+                                        sep = '_'), 
+                        full.names = TRUE)
+res <- lapply(res.files, function(f) get(load(f)))
+names(res) <- paste0("rep",1:length(res))
+
+# get feat.scores as a vector of mean var.imp over cv splits
+fsfunc <- get(gsub("^predictor", "featselect", prname), mode = "function")
+featlist.scores <- lapply(res, function(u){
+  message(",", appendLF = FALSE)
+  v <- fsfunc(model = u$model, keep.signif = FALSE)
+  data.frame(t(v))
+})
+featlist.scores <- colMeans(do.call("rbind", featlist.scores))
+featlist.scores <- sort(featlist.scores, decreasing = TRUE)
+rm(res)
+# split it up to a list of mean var.imp for each type of profile
+featlist.scores.split <- lapply(featlist.long, function(u){
+  sort(featlist.scores[u], decreasing = TRUE)
+})
+
+# reformat other-genes
+othergenes <- data.frame(
+  "x" = xname.mix,
+  "y" = yname,
+  "type" = xlist.type[xname.mix],
+  "predictor" = prname,
+  "rank" = 1:n.max.fs,
+  "feat" = names(featlist.scores.split[[xname.key]])[1:n.max.fs],
+  "varimp" = featlist.scores.split[[xname.key]][1:n.max.fs],
+  row.names = NULL
+)
+rownames(othergenes) <- seq(nrow(othergenes))
+# write up !
+write.table(othergenes, file = "results.othergenes.txt", row.names = TRUE, col.names = TRUE, sep = '\t')
+```
+
+#### Top feature table
+
+```{r featselect}
+# load graph data and read in lists of selected features
+fpgs <- get(load("../data/fpgs.RData"))
+pathways <- read.table("results.pathways.txt", header = TRUE, row.names = 1)
+othergenes <- read.table("results.othergenes.txt", header = TRUE, row.names = 1)
+
+# featselect - path
+pathlist <- subset(pathways, x == "path.vals", select = c(rank,feat))
+pathlist$pathway <- character(n.max.fs)
+pathlist$receptor <- character(n.max.fs)
+pathlist$effector <- character(n.max.fs)
+pathlist$func <- character(n.max.fs)
+rownames(pathlist) <- NULL
+for (i in seq(nrow(pathlist))) {
+  # get path, start and end
+  x <- strsplit(sub("^X_", "", pathlist$feat[i]), "_{2,}")[[1]]
+  path.id <- x[1]
+  start.id <- gsub("_", " ", x[2])
+  end.id <- gsub("_", " ", x[3])
+  pathlist$feat[i] <- paste0(path.id, " : ", start.id, " - ", end.id)
+  # get pathway name
+  stopifnot(fpgs[[path.id]][["path.id"]] == path.id)
+  pathlist$pathway[i] <- fpgs[[path.id]][["path.name"]]
+  # get receptor and effector
+  subpath.id <- paste(start.id, end.id, sep = " - ")
+  subpath <- fpgs[[path.id]][["subgraphs"]][[subpath.id]]
+  e <- as_edgelist(subpath, names = FALSE)
+  v <- V(subpath)$label
+  pathlist$receptor[i] <- v[setdiff(seq_along(v), e[ ,2])]
+  pathlist$effector[i] <- v[setdiff(seq_along(v), e[ ,1])]
+  # get effector function
+  subpath.func <- fpgs[[path.id]][["subgraphs_funs"]]
+  if (paste0(subpath.id,"_func") %in% names(subpath.func)) {
+    subpath.func <- subpath.func[[paste0(subpath.id,"_func")]]
+    pathlist$func[i] <- V(subpath.func)$label[grep("_func$", V(subpath.func)$name)]
+  } else 
+    pathlist$func[i] <- NA
+}
+# preview
+knitr::kable(pathlist, caption = paste0("top ", n.max.fs, " path selected from path.vals"))
+
+# featselect - eff
+efflist <- subset(pathways, x == "eff.vals", select = c(rank,feat))
+efflist$pathway <- character(n.max.fs)
+efflist$effector <- character(n.max.fs)
+efflist$func <- character(n.max.fs)
+rownames(efflist) <- NULL
+for (i in seq(nrow(efflist))) {
+  # get path, start and end
+  x <- strsplit(sub("^X_", "", efflist$feat[i]), "_{2,}")[[1]]
+  path.id <- x[1]
+  start.id <- "X" # just for error control
+  end.id <- gsub("_", " ", x[2])
+  efflist$feat[i] <- paste0(path.id, " : ", start.id, " - ", end.id)
+  # get pathway name
+  stopifnot(fpgs[[path.id]][["path.id"]] == path.id)
+  efflist$pathway[i] <- fpgs[[path.id]][["path.name"]]
+  # get receptor and effector
+  subpath.id <- end.id
+  subpath <- fpgs[[path.id]][["effector.subgraphs"]][[subpath.id]]
+  e <- as_edgelist(subpath, names = FALSE)
+  v <- V(subpath)$label
+  efflist$effector[i] <- v[setdiff(seq_along(v), e[ ,1])]
+  # get effector function
+  subpath.func <- fpgs[[path.id]][["effector.subgraphs_funs"]]
+  if (paste0(subpath.id,"_func") %in% names(subpath.func)) {
+    subpath.func <- subpath.func[[paste0(subpath.id,"_func")]]
+    efflist$func[i] <- V(subpath.func)$label[grep("_func$", V(subpath.func)$name)]
+  } else 
+    efflist$func[i] <- NA
+}
+# preview
+knitr::kable(efflist, caption = paste0("top ", n.max.fs, " eff selected from eff.vals"))
+
+# featselect - other.genes
+genelist <- subset(othergenes, select = c(rank,feat))
+rownames(genelist) <- NULL
+# get entrez id
+genelist$feat <- gsub("^X_", "", genelist$feat)
+# get annotations
+gene.annot <- select(org.Hs.eg.db, genelist$feat, c("SYMBOL","GENENAME","GO"), "ENTREZID")
+gene.annot$ONTOLOGY <- ordered(
+  gene.annot$ONTOLOGY, 
+  levels = c("MF", "BP")
+)
+gene.annot <- gene.annot[order(gene.annot$ONTOLOGY), ]
+gene.annot$EVIDENCE <- ordered(
+  gene.annot$EVIDENCE, 
+  levels = c("IEA", "EXP", "IDA", "IPI", "IMP", "IGI", "IEP", "TAS")
+)
+gene.annot <- gene.annot[order(gene.annot$EVIDENCE), ]
+go.annot <- select(GO.db, gene.annot$GO, "TERM", "GOID")
+# get gene symbols, names and GO functions (with preferred order of ONTOLOGY and EVIDENCE defined above)
+id <- match(genelist$feat, gene.annot$ENTREZID)
+genelist$symbol <- gene.annot$SYMBOL[id]
+genelist$name <- gene.annot$GENENAME[id]
+genelist$func <- go.annot$TERM[match(gene.annot$GO[id], go.annot$GOID)]
+# preview
+knitr::kable(genelist, caption = paste0("top ", n.max.fs, " other-genes selected from ", xname.mix))
+```
+
+## IV. Session info
+
+```{r session_info}
+devtools::session_info()
+```
