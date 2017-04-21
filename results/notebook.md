@@ -23,10 +23,10 @@ This notebook reproduces numerical results of the following paper:
 ``` r
 knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE, fig.width = 15, fig.height = 10)
 options(stringsAsFactors = FALSE)
-library(ggplot2)
-library(igraph)
-library(org.Hs.eg.db)
-library(GO.db)
+library(ggplot2)      # produces boxplots
+library(igraph)       # processes and plots pathways networks
+library(org.Hs.eg.db) # maps entrezID to gene symbol
+library(GO.db)        # annotates GO functions
 ```
 
 I. Run prediction
@@ -772,7 +772,7 @@ devtools::session_info()
     ##  language (EN)                        
     ##  collate  C                           
     ##  tz       Europe/Paris                
-    ##  date     2017-04-20                  
+    ##  date     2017-04-21                  
     ## 
     ##  package       * version date       source        
     ##  AnnotationDbi * 1.36.2  2017-01-30 Bioconductor  

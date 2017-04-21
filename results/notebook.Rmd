@@ -21,10 +21,10 @@ This notebook reproduces numerical results of the following paper:
 ```{r setup, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE, fig.width = 15, fig.height = 10)
 options(stringsAsFactors = FALSE)
-library(ggplot2)
-library(igraph)
-library(org.Hs.eg.db)
-library(GO.db)
+library(ggplot2)      # produces boxplots
+library(igraph)       # processes and plots pathways networks
+library(org.Hs.eg.db) # maps entrezID to gene symbol
+library(GO.db)        # annotates GO functions
 ```
 
 # I. Run prediction

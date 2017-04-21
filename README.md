@@ -26,15 +26,16 @@ The top level structure is as follows:
 
 ## Hands-on
 
-To build the project notebook `results/notebook.html` locally, first make sure your machine has installed the following R packages
+To build the project notebook `results/notebook.html` locally, first make sure your local machine has installed the following R packages (or run the corresponding commands to install)
 
 ```r
-require(rmarkdown)    # compiles Rmd to html_document
-require(knitr)        # outputs kable-style tables
-require(ggplot2)      # produces boxplots
-require(igraph)       # processes and plots pathways networks
-require(org.Hs.eg.db) # maps entrezID to gene symbol
-require(GO.db)        # annotates GO functions
+require(rmarkdown)    # install.packages('rmarkdown')
+require(knitr)        # install.packages('knitr')
+require(devtools)     # install.packages('devtools')
+require(ggplot2)      # install.packages('ggplot2')
+require(igraph)       # install.packages('igraph')
+require(org.Hs.eg.db) # source('https://bioconductor.org/biocLite.R'); biocLite('org.Hs.eg.db')
+require(GO.db)        # source('https://bioconductor.org/biocLite.R'); biocLite('GO.db')
 ```
 
 then run in shell, which should take seconds to get the project notebook `results/notebook.html`
