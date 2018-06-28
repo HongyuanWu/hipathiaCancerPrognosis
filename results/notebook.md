@@ -3,22 +3,22 @@ Cancer Prognosis with hiPathia
 Yunlong Jiao
 Apr 15, 2017
 
--   I. Run prediction
--   II. Prediction performance
-    -   Parameter
-    -   Predictor tuning
-    -   Boxplot
-    -   Score and predictor table
-    -   Statistical test
--   III. Feature selection
-    -   Selection of pathways
-    -   Selection of other-genes that complement functional pathways
-    -   Top feature table
--   IV. Session info
+-   [I. Run prediction](#i.-run-prediction)
+-   [II. Prediction performance](#ii.-prediction-performance)
+    -   [Parameter](#parameter)
+    -   [Predictor tuning](#predictor-tuning)
+    -   [Boxplot](#boxplot)
+    -   [Score and predictor table](#score-and-predictor-table)
+    -   [Statistical test](#statistical-test)
+-   [III. Feature selection](#iii.-feature-selection)
+    -   [Selection of pathways](#selection-of-pathways)
+    -   [Selection of other-genes that complement functional pathways](#selection-of-other-genes-that-complement-functional-pathways)
+    -   [Top feature table](#top-feature-table)
+-   [IV. Session info](#iv.-session-info)
 
 This notebook reproduces numerical results of the following paper:
 
-> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." Submitted. 2017.
+> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." bioRxiv preprint bioRxiv-132357, 2017. [bioRxiv-132357](https://doi.org/10.1101/132357)
 
 ``` r
 knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE, fig.width = 15, fig.height = 10)
@@ -705,58 +705,58 @@ genelist$func <- go.annot$TERM[match(gene.annot$GO[id], go.annot$GOID)]
 knitr::kable(genelist, caption = paste0("top ", n.max.fs, " other-genes selected from ", xname.mix))
 ```
 
-|  rank| feat   | symbol    | name                                                   | func                                                                                                          |
-|-----:|:-------|:----------|:-------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------|
-|     1| 6944   | VPS72     | vacuolar protein sorting 72 homolog                    | DNA binding                                                                                                   |
-|     2| 150356 | CHADL     | chondroadherin like                                    | proteinaceous extracellular matrix                                                                            |
-|     3| 340273 | ABCB5     | ATP binding cassette subfamily B member 5              | ATP binding                                                                                                   |
-|     4| 8543   | LMO4      | LIM domain only 4                                      | enhancer sequence-specific DNA binding                                                                        |
-|     5| 4976   | OPA1      | OPA1, mitochondrial dynamin like GTPase                | GTP binding                                                                                                   |
-|     6| 84057  | MND1      | meiotic nuclear divisions 1                            | double-stranded DNA binding                                                                                   |
-|     7| 65992  | DDRGK1    | DDRGK domain containing 1                              | regulation of intracellular estrogen receptor signaling pathway                                               |
-|     8| 2532   | ACKR1     | atypical chemokine receptor 1 (Duffy blood group)      | G-protein coupled receptor activity                                                                           |
-|     9| 554    | AVPR2     | arginine vasopressin receptor 2                        | positive regulation of systemic arterial blood pressure                                                       |
-|    10| 7203   | CCT3      | chaperonin containing TCP1 subunit 3                   | ATP binding                                                                                                   |
-|    11| 1960   | EGR3      | early growth response 3                                | DNA binding                                                                                                   |
-|    12| 5876   | RABGGTB   | Rab geranylgeranyltransferase beta subunit             | protein binding                                                                                               |
-|    13| 9314   | KLF4      | Kruppel like factor 4                                  | core promoter binding                                                                                         |
-|    14| 3872   | KRT17     | keratin 17                                             | positive regulation of cell growth                                                                            |
-|    15| 1020   | CDK5      | cyclin dependent kinase 5                              | p53 binding                                                                                                   |
-|    16| 22915  | MMRN1     | multimerin 1                                           | calcium ion binding                                                                                           |
-|    17| 125    | ADH1B     | alcohol dehydrogenase 1B (class I), beta polypeptide   | alcohol dehydrogenase activity, zinc-dependent                                                                |
-|    18| 115939 | TSR3      | TSR3, acp transferase ribosome maturation factor       | maturation of SSU-rRNA                                                                                        |
-|    19| 3068   | HDGF      | hepatoma-derived growth factor                         | nucleotide binding                                                                                            |
-|    20| 10188  | TNK2      | tyrosine kinase non receptor 2                         | protein serine/threonine kinase activity                                                                      |
-|    21| 202333 | CMYA5     | cardiomyopathy associated 5                            | M band                                                                                                        |
-|    22| 79174  | CRELD2    | cysteine rich with EGF like domains 2                  | calcium ion binding                                                                                           |
-|    23| 811    | CALR      | calreticulin                                           | iron ion binding                                                                                              |
-|    24| 130733 | TMEM178A  | transmembrane protein 178A                             | integral component of membrane                                                                                |
-|    25| 441531 | PGAM4     | phosphoglycerate mutase family member 4                | bisphosphoglycerate mutase activity                                                                           |
-|    26| 7257   | TSNAX     | translin associated factor X                           | sequence-specific DNA binding                                                                                 |
-|    27| 22893  | BAHD1     | bromo adjacent homology domain containing 1            | transcription, DNA-templated                                                                                  |
-|    28| 1395   | CRHR2     | corticotropin releasing hormone receptor 2             | cell surface receptor signaling pathway                                                                       |
-|    29| 467    | ATF3      | activating transcription factor 3                      | transcriptional repressor activity, RNA polymerase II core promoter proximal region sequence-specific binding |
-|    30| 50940  | PDE11A    | phosphodiesterase 11A                                  | cAMP binding                                                                                                  |
-|    31| 6403   | SELP      | selectin P                                             | glycoprotein binding                                                                                          |
-|    32| 221303 | FAM162B   | family with sequence similarity 162 member B           | integral component of membrane                                                                                |
-|    33| 400830 | DEFB132   | defensin beta 132                                      | extracellular region                                                                                          |
-|    34| 55341  | LSG1      | large 60S subunit nuclear export GTPase 1              | protein transport                                                                                             |
-|    35| 3491   | CYR61     | cysteine rich angiogenic inducer 61                    | insulin-like growth factor binding                                                                            |
-|    36| 9079   | LDB2      | LIM domain binding 2                                   | enzyme binding                                                                                                |
-|    37| 11190  | CEP250    | centrosomal protein 250                                | cilium                                                                                                        |
-|    38| 3347   | HTN3      | histatin 3                                             | metal ion binding                                                                                             |
-|    39| 80726  | KIAA1683  | KIAA1683                                               | nucleus                                                                                                       |
-|    40| 23020  | SNRNP200  | small nuclear ribonucleoprotein U5 subunit 200         | ATP binding                                                                                                   |
-|    41| 149647 | FAM71A    | family with sequence similarity 71 member A            | nucleus                                                                                                       |
-|    42| 1431   | CS        | citrate synthase                                       | tricarboxylic acid cycle                                                                                      |
-|    43| 387914 | SHISA2    | shisa family member 2                                  | multicellular organism development                                                                            |
-|    44| 550643 | LINC01420 | long intergenic non-protein coding RNA 1420            | NA                                                                                                            |
-|    45| 115207 | KCTD12    | potassium channel tetramerization domain containing 12 | protein homooligomerization                                                                                   |
-|    46| 84618  | NT5C1A    | 5'-nucleotidase, cytosolic IA                          | nucleotide binding                                                                                            |
-|    47| 126393 | HSPB6     | heat shock protein family B (small) member 6           | structural constituent of eye lens                                                                            |
-|    48| 4239   | MFAP4     | microfibrillar associated protein 4                    | cell adhesion                                                                                                 |
-|    49| 5709   | PSMD3     | proteasome 26S subunit, non-ATPase 3                   | enzyme regulator activity                                                                                     |
-|    50| 401052 | LOC401052 | uncharacterized LOC401052                              | NA                                                                                                            |
+|  rank| feat   | symbol   | name                                                   | func                                                                          |
+|-----:|:-------|:---------|:-------------------------------------------------------|:------------------------------------------------------------------------------|
+|     1| 6944   | VPS72    | vacuolar protein sorting 72 homolog                    | DNA binding                                                                   |
+|     2| 150356 | CHADL    | chondroadherin like                                    | proteinaceous extracellular matrix                                            |
+|     3| 340273 | ABCB5    | ATP binding cassette subfamily B member 5              | ATP binding                                                                   |
+|     4| 8543   | LMO4     | LIM domain only 4                                      | enhancer sequence-specific DNA binding                                        |
+|     5| 4976   | OPA1     | OPA1, mitochondrial dynamin like GTPase                | GTP binding                                                                   |
+|     6| 84057  | MND1     | meiotic nuclear divisions 1                            | double-stranded DNA binding                                                   |
+|     7| 65992  | DDRGK1   | DDRGK domain containing 1                              | RNA polymerase II repressing transcription factor binding                     |
+|     8| 2532   | ACKR1    | atypical chemokine receptor 1 (Duffy blood group)      | G-protein coupled receptor activity                                           |
+|     9| 554    | AVPR2    | arginine vasopressin receptor 2                        | positive regulation of systemic arterial blood pressure                       |
+|    10| 7203   | CCT3     | chaperonin containing TCP1 subunit 3                   | ATP binding                                                                   |
+|    11| 1960   | EGR3     | early growth response 3                                | DNA binding                                                                   |
+|    12| 5876   | RABGGTB  | Rab geranylgeranyltransferase beta subunit             | protein binding                                                               |
+|    13| 9314   | KLF4     | Kruppel like factor 4                                  | core promoter binding                                                         |
+|    14| 3872   | KRT17    | keratin 17                                             | positive regulation of cell growth                                            |
+|    15| 1020   | CDK5     | cyclin dependent kinase 5                              | p53 binding                                                                   |
+|    16| 22915  | MMRN1    | multimerin 1                                           | calcium ion binding                                                           |
+|    17| 125    | ADH1B    | alcohol dehydrogenase 1B (class I), beta polypeptide   | alcohol dehydrogenase activity, zinc-dependent                                |
+|    18| 115939 | TSR3     | TSR3, acp transferase ribosome maturation factor       | transferase activity                                                          |
+|    19| 3068   | HDGF     | heparin binding growth factor                          | nucleotide binding                                                            |
+|    20| 10188  | TNK2     | tyrosine kinase non receptor 2                         | protein serine/threonine kinase activity                                      |
+|    21| 202333 | CMYA5    | cardiomyopathy associated 5                            | M band                                                                        |
+|    22| 79174  | CRELD2   | cysteine rich with EGF like domains 2                  | calcium ion binding                                                           |
+|    23| 811    | CALR     | calreticulin                                           | iron ion binding                                                              |
+|    24| 130733 | TMEM178A | transmembrane protein 178A                             | integral component of membrane                                                |
+|    25| 441531 | PGAM4    | phosphoglycerate mutase family member 4                | bisphosphoglycerate mutase activity                                           |
+|    26| 7257   | TSNAX    | translin associated factor X                           | sequence-specific DNA binding                                                 |
+|    27| 22893  | BAHD1    | bromo adjacent homology domain containing 1            | transcription, DNA-templated                                                  |
+|    28| 1395   | CRHR2    | corticotropin releasing hormone receptor 2             | cell surface receptor signaling pathway                                       |
+|    29| 467    | ATF3     | activating transcription factor 3                      | RNA polymerase II core promoter proximal region sequence-specific DNA binding |
+|    30| 50940  | PDE11A   | phosphodiesterase 11A                                  | metal ion binding                                                             |
+|    31| 6403   | SELP     | selectin P                                             | calcium-dependent protein binding                                             |
+|    32| 221303 | FAM162B  | family with sequence similarity 162 member B           | integral component of membrane                                                |
+|    33| 400830 | DEFB132  | defensin beta 132                                      | killing of cells of other organism                                            |
+|    34| 55341  | LSG1     | large 60S subunit nuclear export GTPase 1              | protein transport                                                             |
+|    35| 3491   | CYR61    | cysteine rich angiogenic inducer 61                    | insulin-like growth factor binding                                            |
+|    36| 9079   | LDB2     | LIM domain binding 2                                   | enzyme binding                                                                |
+|    37| 11190  | CEP250   | centrosomal protein 250                                | cilium                                                                        |
+|    38| 3347   | HTN3     | histatin 3                                             | metal ion binding                                                             |
+|    39| 80726  | IQCN     | IQ motif containing N                                  | nucleus                                                                       |
+|    40| 23020  | SNRNP200 | small nuclear ribonucleoprotein U5 subunit 200         | ATP binding                                                                   |
+|    41| 149647 | FAM71A   | family with sequence similarity 71 member A            | nucleus                                                                       |
+|    42| 1431   | CS       | citrate synthase                                       | tricarboxylic acid cycle                                                      |
+|    43| 387914 | SHISA2   | shisa family member 2                                  | multicellular organism development                                            |
+|    44| 550643 | NBDY     | negative regulator of P-body association               | mRNA processing                                                               |
+|    45| 115207 | KCTD12   | potassium channel tetramerization domain containing 12 | protein homooligomerization                                                   |
+|    46| 84618  | NT5C1A   | 5'-nucleotidase, cytosolic IA                          | nucleotide binding                                                            |
+|    47| 126393 | HSPB6    | heat shock protein family B (small) member 6           | structural constituent of eye lens                                            |
+|    48| 4239   | MFAP4    | microfibril associated protein 4                       | cell adhesion                                                                 |
+|    49| 5709   | PSMD3    | proteasome 26S subunit, non-ATPase 3                   | enzyme regulator activity                                                     |
+|    50| 401052 | NA       | NA                                                     | NA                                                                            |
 
 IV. Session info
 ================
@@ -766,48 +766,66 @@ devtools::session_info()
 ```
 
     ##  setting  value                       
-    ##  version  R version 3.3.2 (2016-10-31)
-    ##  system   x86_64, darwin13.4.0        
+    ##  version  R version 3.4.3 (2017-11-30)
+    ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
-    ##  collate  C                           
-    ##  tz       Europe/Paris                
-    ##  date     2017-04-21                  
+    ##  collate  en_US.UTF-8                 
+    ##  tz       Europe/London               
+    ##  date     2018-06-28                  
     ## 
-    ##  package       * version date       source        
-    ##  AnnotationDbi * 1.36.2  2017-01-30 Bioconductor  
-    ##  Biobase       * 2.34.0  2016-10-18 Bioconductor  
-    ##  BiocGenerics  * 0.20.0  2016-10-18 Bioconductor  
-    ##  DBI             0.6     2017-03-09 CRAN (R 3.3.2)
-    ##  GO.db         * 3.4.0   2017-03-30 Bioconductor  
-    ##  IRanges       * 2.8.2   2017-03-18 Bioconductor  
-    ##  RSQLite         1.1-2   2017-01-08 CRAN (R 3.3.2)
-    ##  Rcpp            0.12.10 2017-03-19 CRAN (R 3.3.2)
-    ##  S4Vectors     * 0.12.2  2017-03-18 Bioconductor  
-    ##  assertthat      0.1     2013-12-06 CRAN (R 3.3.0)
-    ##  backports       1.0.5   2017-01-18 CRAN (R 3.3.2)
-    ##  colorspace      1.3-2   2016-12-14 CRAN (R 3.3.2)
-    ##  devtools        1.12.0  2016-06-24 CRAN (R 3.3.0)
-    ##  digest          0.6.12  2017-01-27 CRAN (R 3.3.2)
-    ##  evaluate        0.10    2016-10-11 CRAN (R 3.3.0)
-    ##  ggplot2       * 2.2.1   2016-12-30 CRAN (R 3.3.2)
-    ##  gtable          0.2.0   2016-02-26 CRAN (R 3.3.0)
-    ##  highr           0.6     2016-05-09 CRAN (R 3.3.0)
-    ##  htmltools       0.3.5   2016-03-21 CRAN (R 3.3.0)
-    ##  igraph        * 1.0.1   2015-06-26 CRAN (R 3.3.0)
-    ##  knitr           1.15.1  2016-11-22 CRAN (R 3.3.2)
-    ##  labeling        0.3     2014-08-23 CRAN (R 3.3.0)
-    ##  lazyeval        0.2.0   2016-06-12 CRAN (R 3.3.0)
-    ##  magrittr        1.5     2014-11-22 CRAN (R 3.3.0)
-    ##  memoise         1.0.0   2016-01-29 CRAN (R 3.3.0)
-    ##  munsell         0.4.3   2016-02-13 CRAN (R 3.3.0)
-    ##  org.Hs.eg.db  * 3.4.0   2016-11-23 Bioconductor  
-    ##  plyr            1.8.4   2016-06-08 CRAN (R 3.3.0)
-    ##  rmarkdown       1.4     2017-03-24 CRAN (R 3.3.2)
-    ##  rprojroot       1.2     2017-01-16 CRAN (R 3.3.2)
-    ##  scales          0.4.1   2016-11-09 CRAN (R 3.3.2)
-    ##  stringi         1.1.3   2017-03-21 CRAN (R 3.3.2)
-    ##  stringr         1.2.0   2017-02-18 CRAN (R 3.3.2)
-    ##  tibble          1.2     2016-08-26 CRAN (R 3.3.0)
-    ##  withr           1.0.2   2016-06-20 CRAN (R 3.3.0)
-    ##  yaml            2.1.14  2016-11-12 CRAN (R 3.3.2)
+    ##  package       * version date       source         
+    ##  AnnotationDbi * 1.40.0  2017-10-31 Bioconductor   
+    ##  backports       1.1.2   2017-12-13 CRAN (R 3.4.3) 
+    ##  base          * 3.4.3   2017-12-07 local          
+    ##  Biobase       * 2.38.0  2017-10-31 Bioconductor   
+    ##  BiocGenerics  * 0.24.0  2017-10-31 Bioconductor   
+    ##  bit             1.1-12  2014-04-09 CRAN (R 3.4.0) 
+    ##  bit64           0.9-7   2017-05-08 CRAN (R 3.4.0) 
+    ##  blob            1.1.0   2017-06-17 CRAN (R 3.4.0) 
+    ##  colorspace      1.3-2   2016-12-14 CRAN (R 3.4.0) 
+    ##  compiler        3.4.3   2017-12-07 local          
+    ##  datasets      * 3.4.3   2017-12-07 local          
+    ##  DBI             0.8     2018-03-02 CRAN (R 3.4.3) 
+    ##  devtools        1.13.5  2018-02-18 CRAN (R 3.4.3) 
+    ##  digest          0.6.15  2018-01-28 CRAN (R 3.4.3) 
+    ##  evaluate        0.10.1  2017-06-24 CRAN (R 3.4.1) 
+    ##  ggplot2       * 2.2.1   2016-12-30 CRAN (R 3.4.0) 
+    ##  GO.db         * 3.5.0   2018-01-05 Bioconductor   
+    ##  graphics      * 3.4.3   2017-12-07 local          
+    ##  grDevices     * 3.4.3   2017-12-07 local          
+    ##  grid            3.4.3   2017-12-07 local          
+    ##  gtable          0.2.0   2016-02-26 CRAN (R 3.4.0) 
+    ##  highr           0.6     2016-05-09 CRAN (R 3.4.0) 
+    ##  htmltools       0.3.6   2017-04-28 CRAN (R 3.4.0) 
+    ##  igraph        * 1.2.1   2018-03-10 CRAN (R 3.4.4) 
+    ##  IRanges       * 2.12.0  2017-10-31 Bioconductor   
+    ##  knitr           1.20    2018-02-20 CRAN (R 3.4.3) 
+    ##  labeling        0.3     2014-08-23 CRAN (R 3.4.0) 
+    ##  lazyeval        0.2.1   2017-10-29 CRAN (R 3.4.2) 
+    ##  magrittr        1.5     2014-11-22 CRAN (R 3.4.0) 
+    ##  memoise         1.1.0   2017-04-21 CRAN (R 3.4.0) 
+    ##  methods       * 3.4.3   2017-12-07 local          
+    ##  munsell         0.4.3   2016-02-13 CRAN (R 3.4.0) 
+    ##  org.Hs.eg.db  * 3.5.0   2018-01-05 Bioconductor   
+    ##  parallel      * 3.4.3   2017-12-07 local          
+    ##  pillar          1.2.1   2018-02-27 CRAN (R 3.4.3) 
+    ##  pkgconfig       2.0.1   2017-03-21 CRAN (R 3.4.0) 
+    ##  plyr            1.8.4   2016-06-08 CRAN (R 3.4.0) 
+    ##  Rcpp            0.12.17 2018-05-18 cran (@0.12.17)
+    ##  rlang           0.2.0   2018-02-20 CRAN (R 3.4.3) 
+    ##  rmarkdown       1.9     2018-03-01 CRAN (R 3.4.3) 
+    ##  rprojroot       1.3-2   2018-01-03 CRAN (R 3.4.3) 
+    ##  RSQLite         2.0     2017-06-19 CRAN (R 3.4.1) 
+    ##  rstudioapi      0.7     2017-09-07 CRAN (R 3.4.1) 
+    ##  S4Vectors     * 0.16.0  2017-10-31 Bioconductor   
+    ##  scales          0.5.0   2017-08-24 CRAN (R 3.4.1) 
+    ##  stats         * 3.4.3   2017-12-07 local          
+    ##  stats4        * 3.4.3   2017-12-07 local          
+    ##  stringi         1.1.7   2018-03-12 CRAN (R 3.4.4) 
+    ##  stringr         1.3.0   2018-02-19 CRAN (R 3.4.3) 
+    ##  tibble          1.4.2   2018-01-22 CRAN (R 3.4.3) 
+    ##  tools           3.4.3   2017-12-07 local          
+    ##  utils         * 3.4.3   2017-12-07 local          
+    ##  withr           2.1.1   2017-12-19 CRAN (R 3.4.3) 
+    ##  yaml            2.1.18  2018-03-08 CRAN (R 3.4.4)

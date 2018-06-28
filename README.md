@@ -2,7 +2,7 @@
 
 This repo contains data and R codes for reproducing numerical results of the following paper:
 
-> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." Submitted. 2017.
+> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." bioRxiv preprint bioRxiv-132357, 2017. [bioRxiv-132357](https://doi.org/10.1101/132357).
 
 ## Quick start
 
@@ -29,21 +29,21 @@ The top level structure is as follows:
 To build the project notebook `results/notebook.html` locally, first make sure your local machine has installed the following R packages (or run the corresponding commands to install)
 
 ```r
-require(rmarkdown)    # install.packages('rmarkdown')
-require(knitr)        # install.packages('knitr')
-require(devtools)     # install.packages('devtools')
-require(ggplot2)      # install.packages('ggplot2')
-require(igraph)       # install.packages('igraph')
-require(org.Hs.eg.db) # source('https://bioconductor.org/biocLite.R'); biocLite('org.Hs.eg.db')
-require(GO.db)        # source('https://bioconductor.org/biocLite.R'); biocLite('GO.db')
+> require(rmarkdown)    # install.packages('rmarkdown')
+> require(knitr)        # install.packages('knitr')
+> require(devtools)     # install.packages('devtools')
+> require(ggplot2)      # install.packages('ggplot2')
+> require(igraph)       # install.packages('igraph')
+> require(org.Hs.eg.db) # source('https://bioconductor.org/biocLite.R'); biocLite('org.Hs.eg.db')
+> require(GO.db)        # source('https://bioconductor.org/biocLite.R'); biocLite('GO.db')
 ```
 
 then run in shell, which should take seconds to get the project notebook `results/notebook.html`
 
 ```sh
-$ git clone https://github.com/YunlongJiao/hipathiaCancerPrognosis
+$ git clone git@github.com:YunlongJiao/hipathiaCancerPrognosis.git
 $ cd hipathiaCancerPrognosis/results/
-$ Rscript -e "rmarkdown::render('results/notebook.Rmd')"
+$ Rscript -e "rmarkdown::render('notebook.Rmd', output_format = 'all')"
 ```
 
 Note that in order to build the project from scratch, one needs to run the predictions to obtain the three results files `results/results.[scores|pathways|othergenes].txt`, which requires to run `runPredict.R` before building the project notebook. See `results/notebook.html` for detail.

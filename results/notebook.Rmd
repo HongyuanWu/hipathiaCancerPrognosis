@@ -16,7 +16,7 @@ output:
 
 This notebook reproduces numerical results of the following paper:
 
-> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." Submitted. 2017.
+> Yunlong Jiao, Marta Hidalgo, Cankut Cubuk, Alicia Amadoz, Jose Carbonell-Caballero, Jean-Philippe Vert, and Joaquin Dopazo. "Signaling Pathway Activities Improve Prognosis for Breast Cancer." bioRxiv preprint bioRxiv-132357, 2017. [bioRxiv-132357](https://doi.org/10.1101/132357)
 
 ```{r setup, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(error = FALSE, warning = FALSE, message = FALSE, fig.width = 15, fig.height = 10)
